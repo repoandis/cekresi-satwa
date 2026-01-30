@@ -1,0 +1,98 @@
+# 🚀 Quick Commands for Server 192.168.0.76
+
+## 📊 Database Connection
+```bash
+# Connect to PostgreSQL
+psql -h 192.168.0.76 -p 5432 -U postgres -d cekresi_satwa
+
+# Import schema (one-time)
+psql -h 192.168.0.76 -p 5432 -U postgres -d cekresi_satwa -f database/migrations/001_create_users_table.sql
+psql -h 192.168.0.76 -p 5432 -U postgres -d cekresi_satwa -f database/migrations/002_create_satwa_tables.sql
+
+# Check tables
+psql -h 192.168.0.76 -p 5432 -U postgres -d cekresi_satwa -c '\dt'
+
+# Check data
+psql -h 192.168.0.76 -p 5432 -U postgres -d cekresi_satwa -c 'SELECT * FROM users;'
+psql -h 192.168.0.76 -p 5432 -U postgres -d cekresi_satwa -c 'SELECT * FROM satwa;'
+```
+
+## 🗄️ MinIO Connection
+```bash
+# MinIO Console
+http://192.168.0.76:9001
+# Username: minioadmin
+# Password: minioadmin123
+
+# Test MinIO API
+curl http://192.168.0.76:9000/minio/health/live
+
+# List buckets (need mc installed)
+mc alias set server http://192.168.0.76:9000 minioadmin minioadmin123
+mc ls server
+```
+
+## 🧪 Application Testing
+```bash
+# Start development server
+npm run dev
+
+# Test API endpoints
+curl http://localhost:3000/api/satwa
+curl -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" -d '{"username":"admin","password":"admin123"}'
+
+# Test database connection via API
+curl http://localhost:3000/api/satwa -v
+```
+
+## 🔧 Environment Setup
+```bash
+# Create .env.local
+cat > .env.local << EOF
+# Database Configuration
+DB_HOST=192.168.0.76
+DB_PORT=5432
+DB_NAME=cekresi_satwa
+DB_USER=postgres
+DB_PASSWORD=your_postgres_password
+
+# MinIO Configuration
+MINIO_ENDPOINT=192.168.0.76
+MINIO_PORT=9000
+MINIO_BUCKET=cekresi-files
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin123
+
+# Application Configuration
+NEXT_PUBLIC_APP_URL=http://192.168.0.76:3000
+NODE_ENV=development
+EOF
+```
+
+## 🌐 Network Testing
+```bash
+# Test server connectivity
+ping 192.168.0.76
+
+# Test ports
+nc -z 192.168.0.76 5432  # PostgreSQL
+nc -z 192.168.0.76 9000  # MinIO API
+nc -z 192.168.0.76 9001  # MinIO Console
+
+# Test with telnet
+telnet 192.168.0.76 5432
+telnet 192.168.0.76 9000
+```
+
+## 📱 Interactive Script
+```bash
+# Run interactive connection menu
+cd migration
+./connect-server.sh
+
+# Or specific commands
+./connect-server.sh test      # Test connectivity
+./connect-server.sh db        # Show database commands
+./connect-server.sh minio     # Show MinIO commands
+./connect-server.sh connect   # Quick connect to database
+```

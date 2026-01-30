@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { satwa } from '@/lib/server-helpers'
 
 export async function GET() {
   try {
-    const { data, error } = await supabase
-      .from('satwa')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
+    const data = await satwa.findAll()
 
     return NextResponse.json({
       success: true,
@@ -35,20 +30,14 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { data, error } = await supabase
-      .from('satwa')
-      .insert([{
-        kode_resi: kodeResi,
-        nama,
-        spesies,
-        asal,
-        tujuan,
-        status: status || 'PENDING'
-      }])
-      .select()
-      .single()
-
-    if (error) throw error
+    const data = await satwa.create({
+      kode_resi: kodeResi,
+      nama,
+      spesies,
+      asal,
+      tujuan,
+      status: status || 'PENDING'
+    })
 
     return NextResponse.json({
       success: true,

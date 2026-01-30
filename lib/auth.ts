@@ -1,31 +1,27 @@
-import { supabase } from './supabase'
-import { Database } from './supabase'
+import { users } from './server-helpers'
 
-export type User = Database['public']['Tables']['users']['Row']
+export type User = {
+  id: string
+  username: string
+  password: string
+  role: 'admin' | 'user'
+  created_at: string
+  updated_at: string
+}
 
 export async function signIn(username: string, password: string) {
   try {
-    // Query without .single() to handle multiple/no results properly
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('username', username)
-      .eq('password', password)
-
-    if (error) {
-      throw error
-    }
+    const user = await users.findByUsername(username)
     
-    // Check if we found exactly one user
-    if (!data || data.length === 0) {
+    if (!user) {
       return { user: null, error: new Error('User not found') }
     }
     
-    if (data.length > 1) {
-      console.warn('Multiple users found with same credentials')
+    if (user.password !== password) {
+      return { user: null, error: new Error('Invalid password') }
     }
     
-    return { user: data[0], error: null }
+    return { user, error: null }
   } catch (error) {
     console.error('Sign in error:', error)
     return { user: null, error: error as Error }
@@ -34,15 +30,8 @@ export async function signIn(username: string, password: string) {
 
 export async function signUp(username: string, password: string, role: 'admin' | 'user' = 'user') {
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .insert([{ username, password, role }])
-      .select()
-      .single()
-
-    if (error) throw error
-    
-    return { user: data, error: null }
+    const user = await users.create({ username, password, role })
+    return { user, error: null }
   } catch (error) {
     console.error('Sign up error:', error)
     return { user: null, error: error as Error }
@@ -51,14 +40,8 @@ export async function signUp(username: string, password: string, role: 'admin' |
 
 export async function getAllUsers() {
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, username, role, created_at, updated_at')
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-    
-    return { users: data, error: null }
+    const userList = await users.findAll()
+    return { users: userList, error: null }
   } catch (error) {
     console.error('Get users error:', error)
     return { users: null, error: error as Error }
@@ -67,16 +50,8 @@ export async function getAllUsers() {
 
 export async function updateUserPassword(userId: string, newPassword: string) {
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .update({ password: newPassword, updated_at: new Date().toISOString() })
-      .eq('id', userId)
-      .select()
-      .single()
-
-    if (error) throw error
-    
-    return { user: data, error: null }
+    const result = await users.updatePassword(userId, newPassword)
+    return { user: result, error: null }
   } catch (error) {
     console.error('Update password error:', error)
     return { user: null, error: error as Error }
@@ -85,16 +60,8 @@ export async function updateUserPassword(userId: string, newPassword: string) {
 
 export async function updateUserRole(userId: string, newRole: 'admin' | 'user') {
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .update({ role: newRole, updated_at: new Date().toISOString() })
-      .eq('id', userId)
-      .select()
-      .single()
-
-    if (error) throw error
-    
-    return { user: data, error: null }
+    const result = await users.updateRole(userId, newRole)
+    return { user: result, error: null }
   } catch (error) {
     console.error('Update role error:', error)
     return { user: null, error: error as Error }
@@ -103,13 +70,7 @@ export async function updateUserRole(userId: string, newRole: 'admin' | 'user') 
 
 export async function deleteUser(userId: string) {
   try {
-    const { error } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', userId)
-
-    if (error) throw error
-    
+    await users.delete(userId)
     return { error: null }
   } catch (error) {
     console.error('Delete user error:', error)

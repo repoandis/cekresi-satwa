@@ -9,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle, Plus, Edit, Trash2, Loader2, Users, Shield, User as UserIcon } from 'lucide-react'
-import { getAllUsers, signUp, updateUserPassword, updateUserRole, deleteUser } from '@/lib/auth'
 
 interface User {
   id: string
@@ -17,6 +16,53 @@ interface User {
   role: 'admin' | 'user'
   created_at: string
   updated_at: string
+}
+
+// API functions for user management
+const userAPI = {
+  getAll: async () => {
+    const response = await fetch('/api/users')
+    if (!response.ok) throw new Error('Failed to fetch users')
+    return response.json()
+  },
+  
+  create: async (userData: { username: string; password: string; role: string }) => {
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    })
+    if (!response.ok) throw new Error('Failed to create user')
+    return response.json()
+  },
+  
+  updatePassword: async (userId: string, password: string) => {
+    const response = await fetch(`/api/users/${userId}/password`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    })
+    if (!response.ok) throw new Error('Failed to update password')
+    return response.json()
+  },
+  
+  updateRole: async (userId: string, role: string) => {
+    const response = await fetch(`/api/users/${userId}/role`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role })
+    })
+    if (!response.ok) throw new Error('Failed to update role')
+    return response.json()
+  },
+  
+  delete: async (userId: string) => {
+    const response = await fetch(`/api/users/${userId}`, {
+      method: 'DELETE'
+    })
+    if (!response.ok) throw new Error('Failed to delete user')
+    return response.json()
+  }
 }
 
 export function UserManagement() {
@@ -43,11 +89,11 @@ export function UserManagement() {
 
   const loadUsers = async () => {
     try {
-      const result = await getAllUsers()
+      const result = await userAPI.getAll()
       if (result.users) {
         setUsers(result.users)
       } else if (result.error) {
-        setError(result.error.message)
+        setError(result.error)
       }
     } catch (err) {
       setError('Gagal memuat data user')
@@ -63,7 +109,7 @@ export function UserManagement() {
     setIsCreateLoading(true)
 
     try {
-      const result = await signUp(newUsername, newPassword, newRole)
+      const result = await userAPI.create({ username: newUsername, password: newPassword, role: newRole })
       if (result.user) {
         setSuccess(`User ${newUsername} berhasil dibuat!`)
         setNewUsername('')
@@ -71,7 +117,7 @@ export function UserManagement() {
         setNewRole('user')
         loadUsers()
       } else if (result.error) {
-        setError(result.error.message)
+        setError(result.error)
       }
     } catch (err) {
       setError('Gagal membuat user')
@@ -92,18 +138,18 @@ export function UserManagement() {
 
       // Update password if provided
       if (editPassword) {
-        const passwordResult = await updateUserPassword(editUserId, editPassword)
+        const passwordResult = await userAPI.updatePassword(editUserId, editPassword)
         if (passwordResult.error) {
-          setError(passwordResult.error.message)
+          setError(passwordResult.error)
           return
         }
       }
 
       // Update role if changed
       if (editRole !== user.role) {
-        const roleResult = await updateUserRole(editUserId, editRole)
+        const roleResult = await userAPI.updateRole(editUserId, editRole)
         if (roleResult.error) {
-          setError(roleResult.error.message)
+          setError(roleResult.error)
           return
         }
       }
@@ -124,9 +170,9 @@ export function UserManagement() {
     }
 
     try {
-      const result = await deleteUser(userId)
+      const result = await userAPI.delete(userId)
       if (result.error) {
-        setError(result.error.message)
+        setError(result.error)
       } else {
         setSuccess(`User ${username} berhasil dihapus!`)
         loadUsers()

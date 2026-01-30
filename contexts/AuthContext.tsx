@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { User } from '@/lib/auth'
+import { User, clientAuth } from '@/lib/client-auth'
 
 interface AuthContextType {
   user: User | null
@@ -18,21 +18,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check for stored user session on mount
-    const storedUser = localStorage.getItem('user')
+    const storedUser = clientAuth.getCurrentUser()
     if (storedUser) {
-      setUser(JSON.parse(storedUser))
+      setUser(storedUser)
     }
     setIsLoading(false)
   }, [])
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      const { signIn } = await import('@/lib/auth')
-      const result = await signIn(username, password)
+      const result = await clientAuth.signIn(username, password)
       
       if (result.user) {
         setUser(result.user)
-        localStorage.setItem('user', JSON.stringify(result.user))
+        clientAuth.setCurrentUser(result.user)
         return true
       }
       return false
@@ -44,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem('user')
+    clientAuth.signOut()
   }
 
   return (
