@@ -29,7 +29,7 @@ export const storage = {
   
   listFiles: async (bucket: string, prefix?: string) => {
     const stream = minioClient.listObjects(bucket, prefix, true)
-    const files = []
+    const files: any[] = []
     
     return new Promise((resolve, reject) => {
       stream.on('data', (obj) => files.push(obj))

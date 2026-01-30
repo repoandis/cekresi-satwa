@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { db } from '@/lib/database'
 
 export async function GET(
   request: NextRequest,
@@ -7,20 +7,21 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const { data, error } = await supabase
-      .from('progress')
-      .select('*')
-      .eq('satwa_id', id)
-      .order('tanggal', { ascending: true })
+    const result = await db.query(
+      'SELECT * FROM progress WHERE satwa_id = $1 ORDER BY created_at ASC',
+      [id]
+    )
 
-    if (error) throw error
-
-    return NextResponse.json(data)
+    return NextResponse.json({
+      success: true,
+      data: result.rows
+    })
   } catch (error) {
     console.error('Error fetching progress:', error)
-    return NextResponse.json({
-      error: 'Failed to fetch progress'
-    }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to fetch progress' },
+      { status: 500 }
+    )
   }
 }
 
@@ -31,33 +32,28 @@ export async function POST(
   try {
     const { id } = await params
     const body = await request.json()
-    const { status, lokasi, keterangan, tanggal } = body
+    const { status, lokasi, keterangan } = body
 
-    if (!status || !lokasi || !tanggal) {
-      return NextResponse.json({
-        error: 'Missing required fields'
-      }, { status: 400 })
-    }
+    const result = await db.query(
+      'INSERT INTO progress (satwa_id, status, lokasi, keterangan, tanggal) VALUES ($1, $2, $3, $4, NOW()) RETURNING *',
+      [id, status, lokasi, keterangan]
+    )
 
-    const { data, error } = await supabase
-      .from('progress')
-      .insert([{
-        satwa_id: id,
-        status,
-        lokasi,
-        keterangan,
-        tanggal: new Date(tanggal).toISOString()
-      }])
-      .select()
-      .single()
+    // Update satwa status
+    await db.query(
+      'UPDATE satwa SET status = $1, updated_at = NOW() WHERE id = $2',
+      [status, id]
+    )
 
-    if (error) throw error
-
-    return NextResponse.json(data)
+    return NextResponse.json({
+      success: true,
+      data: result.rows[0]
+    })
   } catch (error) {
     console.error('Error creating progress:', error)
-    return NextResponse.json({
-      error: 'Failed to create progress'
-    }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to create progress' },
+      { status: 500 }
+    )
   }
 }

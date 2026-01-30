@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { db } from '@/lib/database'
 
 export async function PUT(
   request: NextRequest,
@@ -23,26 +23,23 @@ export async function PUT(
 
     console.log('Updating status to:', status)
 
-    const { data, error } = await supabase
-      .from('satwa')
-      .update({
-        status,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select()
-      .single()
+    const result = await db.query(
+      'UPDATE satwa SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+      [status, id]
+    )
 
-    if (error) {
-      console.error('Supabase error:', error)
-      throw error
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Satwa not found' },
+        { status: 404 }
+      )
     }
 
-    console.log('Update successful:', data)
+    console.log('Update successful:', result.rows[0])
 
     return NextResponse.json({
       success: true,
-      data: data
+      data: result.rows[0]
     })
   } catch (error) {
     console.error('Error updating status:', error)

@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-// Create service role client for RLS bypass
-const supabaseService = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { db } from '@/lib/database'
+import { storage } from '@/lib/storage'
 
 export async function GET(
   request: NextRequest,
@@ -13,20 +8,21 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const { data, error } = await supabaseService
-      .from('dokumen')
-      .select('*')
-      .eq('satwa_id', id)
-      .order('uploaded_at', { ascending: false })
+    const result = await db.query(
+      'SELECT * FROM dokumen WHERE satwa_id = $1 ORDER BY uploaded_at DESC',
+      [id]
+    )
 
-    if (error) throw error
-
-    return NextResponse.json(data)
+    return NextResponse.json({
+      success: true,
+      data: result.rows
+    })
   } catch (error) {
     console.error('Error fetching dokumen:', error)
-    return NextResponse.json({
-      error: 'Failed to fetch dokumen'
-    }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to fetch dokumen' },
+      { status: 500 }
+    )
   }
 }
 
@@ -36,77 +32,48 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    console.log('Starting dokumen upload for satwa:', id)
-    
     const formData = await request.formData()
     const file = formData.get('file') as File
     const nama = formData.get('nama') as string
 
-    console.log('Form data:', { fileName: file?.name, nama, fileSize: file?.size })
-
     if (!file || !nama) {
-      console.error('Missing file or nama')
-      return NextResponse.json({
-        error: 'Missing file or nama'
-      }, { status: 400 })
+      return NextResponse.json(
+        { error: 'File and nama are required' },
+        { status: 400 }
+      )
     }
 
-    // Check file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024 // 10MB
-    if (file.size > maxSize) {
-      console.error('File too large:', file.size)
-      return NextResponse.json({
-        error: 'File too large. Maximum size is 10MB'
-      }, { status: 400 })
-    }
-
-    // Upload file to Supabase Storage
+    // Upload file to MinIO
     const fileExt = file.name.split('.').pop()
     const fileName = `${id}/${Date.now()}.${fileExt}`
     
     console.log('Uploading file to storage:', fileName)
     
-    const { data: uploadData, error: uploadError } = await supabaseService.storage
-      .from('dokumen')
-      .upload(fileName, file)
+    const buffer = Buffer.from(await file.arrayBuffer())
+    await storage.uploadFile('cekresi-files', fileName, buffer, {
+      'Content-Type': file.type
+    })
 
-    if (uploadError) {
-      console.error('Storage upload error:', uploadError)
-      throw uploadError
-    }
+    console.log('File uploaded successfully')
 
-    console.log('File uploaded successfully:', uploadData)
+    // Get file URL
+    const fileUrl = storage.getFileUrl('cekresi-files', fileName)
 
-    // Get public URL
-    const { data: urlData } = supabaseService.storage
-      .from('dokumen')
-      .getPublicUrl(fileName)
+    // Save to database
+    const result = await db.query(
+      'INSERT INTO dokumen (satwa_id, nama, file_url, uploaded_at) VALUES ($1, $2, $3, NOW()) RETURNING *',
+      [id, nama, fileUrl]
+    )
 
-    console.log('Public URL generated:', urlData.publicUrl)
-
-    // Save to database using service role (bypasses RLS)
-    const { data, error } = await supabaseService
-      .from('dokumen')
-      .insert([{
-        satwa_id: id,
-        nama,
-        file_url: urlData.publicUrl
-      }])
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Database insert error:', error)
-      throw error
-    }
-
-    console.log('Dokumen saved to database:', data)
-
-    return NextResponse.json(data)
+    return NextResponse.json({
+      success: true,
+      data: result.rows[0]
+    })
   } catch (error) {
     console.error('Error uploading dokumen:', error)
-    return NextResponse.json({
-      error: 'Failed to upload dokumen: ' + (error instanceof Error ? error.message : 'Unknown error')
-    }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to upload dokumen' },
+      { status: 500 }
+    )
   }
 }

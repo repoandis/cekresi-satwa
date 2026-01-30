@@ -1,11 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-// Create service role client for RLS bypass
-const supabaseService = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { db } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,60 +11,50 @@ export async function GET(request: NextRequest) {
 
     console.log('Fetching all resi:', { page, limit, search, status })
 
-    let query = supabaseService
-      .from('satwa')
-      .select('*')
-      .order('created_at', { ascending: false })
+    let whereClause = 'WHERE 1=1'
+    let queryParams: any[] = []
+    let paramIndex = 1
 
     // Add search filter
     if (search) {
-      query = query.or(`kode_resi.ilike.%${search}%,nama.ilike.%${search}%,spesies.ilike.%${search}%`)
+      whereClause += ` AND (kode_resi ILIKE $${paramIndex} OR nama ILIKE $${paramIndex} OR spesies ILIKE $${paramIndex})`
+      queryParams.push(`%${search}%`)
+      paramIndex++
     }
 
     // Add status filter
     if (status) {
-      query = query.eq('status', status)
+      whereClause += ` AND status = $${paramIndex}`
+      queryParams.push(status)
+      paramIndex++
     }
 
     // Get total count
-    let countQuery = supabaseService
-      .from('satwa')
-      .select('*', { count: 'exact', head: true })
-
-    if (search) {
-      countQuery = countQuery.or(`kode_resi.ilike.%${search}%,nama.ilike.%${search}%,spesies.ilike.%${search}%`)
-    }
-
-    if (status) {
-      countQuery = countQuery.eq('status', status)
-    }
-
-    const { count, error: countError } = await countQuery
-
-    if (countError) {
-      console.error('Error counting resi:', countError)
-    }
+    const countQuery = `SELECT COUNT(*) as total FROM satwa ${whereClause}`
+    const countResult = await db.query(countQuery, queryParams)
+    const total = parseInt(countResult.rows[0].total)
 
     // Get paginated data
-    const from = (page - 1) * limit
-    const to = from + limit - 1
+    const offset = (page - 1) * limit
+    const dataQuery = `
+      SELECT * FROM satwa 
+      ${whereClause} 
+      ORDER BY created_at DESC 
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `
+    queryParams.push(limit, offset)
 
-    const { data, error } = await query.range(from, to)
+    const result = await db.query(dataQuery, queryParams)
 
-    if (error) {
-      console.error('Error fetching resi:', error)
-      throw error
-    }
-
-    const totalPages = Math.ceil((count || 0) / limit)
+    const totalPages = Math.ceil(total / limit)
 
     return NextResponse.json({
       success: true,
-      data: data || [],
+      data: result.rows,
       pagination: {
         page,
         limit,
-        total: count || 0,
+        total,
         totalPages,
         hasNext: page < totalPages,
         hasPrev: page > 1

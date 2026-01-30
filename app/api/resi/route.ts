@@ -1,43 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { db } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const kodeResi = searchParams.get('kodeResi')
+    const kodeResi = searchParams.get('kode_resi')
 
     if (!kodeResi) {
-      return NextResponse.json({
-        success: false,
-        error: 'Kode resi is required'
-      }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Kode resi is required' },
+        { status: 400 }
+      )
     }
 
-    const { data, error } = await supabase
-      .from('satwa')
-      .select('*')
-      .eq('kode_resi', kodeResi)
-      .single()
+    const result = await db.query(
+      'SELECT * FROM satwa WHERE kode_resi = $1',
+      [kodeResi]
+    )
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json({
-          success: false,
-          error: 'Kode resi tidak ditemukan'
-        }, { status: 404 })
-      }
-      throw error
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Resi not found' },
+        { status: 404 }
+      )
     }
 
     return NextResponse.json({
       success: true,
-      data: data
+      data: result.rows[0]
     })
   } catch (error) {
-    console.error('Error searching resi:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to search resi'
-    }, { status: 500 })
+    console.error('Error fetching resi:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch resi' },
+      { status: 500 }
+    )
   }
 }
