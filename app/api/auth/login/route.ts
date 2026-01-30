@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { users } from '@/lib/server-helpers'
+import bcrypt from 'bcrypt'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +23,18 @@ export async function POST(request: NextRequest) {
       }, { status: 401 })
     }
     
-    if (user.password !== password) {
+    // Check if password is bcrypt hash or plain text
+    let isValidPassword = false
+    
+    if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$')) {
+      // Bcrypt hash
+      isValidPassword = await bcrypt.compare(password, user.password)
+    } else {
+      // Plain text (for backward compatibility)
+      isValidPassword = user.password === password
+    }
+    
+    if (!isValidPassword) {
       return NextResponse.json({
         success: false,
         error: 'Invalid password'
