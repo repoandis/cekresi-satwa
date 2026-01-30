@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,6 +13,7 @@ import { ResiSearch } from '@/components/cekresi/ResiSearch'
 
 export function Dashboard() {
   const { user, logout } = useAuth()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [searchKode, setSearchKode] = useState('')
 
@@ -44,7 +46,7 @@ export function Dashboard() {
 
               {/* Quick Actions */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 shadow-sm">
+                <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 shadow-sm" onClick={() => router.push('/cekresi')}>
                   <CardContent className="p-6">
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
@@ -58,7 +60,7 @@ export function Dashboard() {
                   </CardContent>
                 </Card>
 
-                <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 shadow-sm" onClick={() => setActiveTab('profile')}>
+                <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 shadow-sm" onClick={() => router.push('/profile')}>
                   <CardContent className="p-6">
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
@@ -197,7 +199,7 @@ export function Dashboard() {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 shadow-sm" onClick={() => setActiveTab('satwa')}>
+              <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 shadow-sm" onClick={() => router.push('/satwa')}>
                 <CardContent className="p-6">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
@@ -217,7 +219,7 @@ export function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 shadow-sm" onClick={() => setActiveTab('users')}>
+              <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 shadow-sm" onClick={() => router.push('/users')}>
                 <CardContent className="p-6">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
@@ -237,7 +239,7 @@ export function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 shadow-sm" onClick={() => setActiveTab('reports')}>
+              <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer border-0 shadow-sm" onClick={() => router.push('/reports')}>
                 <CardContent className="p-6">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
@@ -304,7 +306,7 @@ export function Dashboard() {
             {user?.role === 'admin' ? (
               <>
                 <button
-                  onClick={() => setActiveTab('overview')}
+                  onClick={() => router.push('/dashboard')}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'overview'
                       ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -315,7 +317,7 @@ export function Dashboard() {
                   <span>Overview</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab('satwa')}
+                  onClick={() => router.push('/satwa')}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'satwa'
                       ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -326,7 +328,7 @@ export function Dashboard() {
                   <span>Data Satwa</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab('users')}
+                  onClick={() => router.push('/users')}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'users'
                       ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -337,7 +339,7 @@ export function Dashboard() {
                   <span>Manajemen User</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab('reports')}
+                  onClick={() => router.push('/reports')}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'reports'
                       ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -351,7 +353,7 @@ export function Dashboard() {
             ) : (
               <>
                 <button
-                  onClick={() => setActiveTab('overview')}
+                  onClick={() => router.push('/dashboard')}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'overview'
                       ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -362,7 +364,7 @@ export function Dashboard() {
                   <span>Overview</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab('resi')}
+                  onClick={() => router.push('/cekresi')}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'resi'
                       ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
@@ -373,7 +375,7 @@ export function Dashboard() {
                   <span>Cek Resi</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab('profile')}
+                  onClick={() => router.push('/profile')}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                     activeTab === 'profile'
                       ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
