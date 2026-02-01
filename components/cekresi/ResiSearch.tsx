@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { useToast } from '@/hooks/use-toast'
 import { Search, Package, MapPin, Calendar, AlertCircle, List, X, FileText, Download } from 'lucide-react'
 import { AllResiList } from './AllResiList'
 
@@ -47,6 +48,7 @@ interface ResiSearchProps {
 }
 
 export function ResiSearch({ showAllResiTab = false, onResiDetail, searchKode: propSearchKode }: ResiSearchProps) {
+  const { toast } = useToast()
   const [searchKode, setSearchKode] = useState(propSearchKode || '')
   const [searchResult, setSearchResult] = useState<Satwa | null>(null)
   const [progressList, setProgressList] = useState<Progress[]>([])
@@ -101,7 +103,7 @@ export function ResiSearch({ showAllResiTab = false, onResiDetail, searchKode: p
     setDokumenList([])
 
     try {
-      const res = await fetch(`/api/resi?kodeResi=${searchKode.trim()}`)
+      const res = await fetch(`/api/resi?kode_resi=${searchKode.trim()}`)
       const data = await res.json()
 
       if (res.ok && data.success) {
@@ -115,21 +117,38 @@ export function ResiSearch({ showAllResiTab = false, onResiDetail, searchKode: p
         // Fetch progress
         const progressRes = await fetch(`/api/satwas/${data.data.id}/progress`)
         if (progressRes.ok) {
-          const progressData = await progressRes.json()
-          setProgressList(progressData)
+          const progressResponse = await progressRes.json()
+          const progressData = progressResponse.data || progressResponse
+          setProgressList(Array.isArray(progressData) ? progressData : [])
         }
 
         // Fetch documents
         const dokumenRes = await fetch(`/api/satwas/${data.data.id}/dokumen`)
         if (dokumenRes.ok) {
-          const dokumenData = await dokumenRes.json()
-          setDokumenList(dokumenData)
+          const dokumenResponse = await dokumenRes.json()
+          const dokumenData = dokumenResponse.data || dokumenResponse
+          setDokumenList(Array.isArray(dokumenData) ? dokumenData : [])
         }
+
+        toast({
+          title: "Success",
+          description: `Resi ${searchKode.trim()} ditemukan`,
+        })
       } else {
         setError(data.error || 'Kode resi tidak ditemukan')
+        toast({
+          title: "Error",
+          description: data.error || 'Kode resi tidak ditemukan',
+          variant: "destructive",
+        })
       }
     } catch (err) {
       setError('Terjadi kesalahan. Silakan coba lagi.')
+      toast({
+        title: "Error",
+        description: 'Terjadi kesalahan. Silakan coba lagi.',
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
