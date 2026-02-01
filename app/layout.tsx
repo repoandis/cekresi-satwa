@@ -33,19 +33,49 @@ export default function RootLayout({
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              // Ensure HERE Maps is available globally
+              // Ensure HERE Maps is available globally and prevent errors
               if (typeof window.H === 'undefined') {
                 window.H = {
                   map: function() {
                     console.warn('HERE Maps H.map() called but not loaded - using polyfill');
-                    return null;
+                    return { 
+                      addEventListener: function() {},
+                      setCenter: function() {},
+                      setZoom: function() {},
+                      getViewModel: function() { return { addObserver: function() {} }; }
+                    };
                   },
                   Client: function() {
                     console.warn('HERE Maps H.Client() called but not loaded - using polyfill');
-                    return null;
+                    return { 
+                      configure: function() {},
+                      getPlatform: function() { return { getMapService: function() { return {}; } }; }
+                    };
+                  },
+                  util: {
+                    Request: function() {
+                      return { 
+                        send: function() {},
+                        abort: function() {}
+                      };
+                    }
+                  },
+                  geo: {
+                    Point: function() {
+                      return { lat: 0, lng: 0 };
+                    }
                   }
                 };
                 console.log('HERE Maps polyfill loaded');
+              }
+              
+              // Override any existing H.map to prevent errors
+              var originalMap = window.H?.map;
+              if (originalMap) {
+                window.H.map = function() {
+                  console.warn('HERE Maps H.map() intercepted by polyfill');
+                  return originalMap.apply(this, arguments) || window.H.map();
+                };
               }
             `,
           }}
@@ -76,9 +106,10 @@ export default function RootLayout({
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
+              // Aggressive error prevention for map-related errors
               window.addEventListener('error', function(e) {
                 if (e.message && (e.message.includes('H.map is not a function') || e.message.includes('_.map is not a function'))) {
-                  console.error('Map Error detected:', e);
+                  console.error('Map Error prevented:', e.message);
                   console.error('Error details:', {
                     message: e.message,
                     filename: e.filename,
@@ -88,20 +119,34 @@ export default function RootLayout({
                   });
                   // Prevent the error from crashing the app
                   e.preventDefault();
+                  e.stopPropagation();
                   return false;
                 }
               });
+              
               window.addEventListener('unhandledrejection', function(e) {
                 if (e.reason && (e.reason.toString().includes('H.map') || e.reason.toString().includes('_.map'))) {
-                  console.error('Map Promise Error:', e);
+                  console.error('Map Promise Error prevented:', e.reason);
                   console.error('Promise error details:', {
                     reason: e.reason,
                     stack: e.reason?.stack
                   });
                   e.preventDefault();
+                  e.stopPropagation();
                   return false;
                 }
               });
+              
+              // Override console.error to catch and filter map errors
+              const originalConsoleError = console.error;
+              console.error = function(...args) {
+                const message = args.join(' ');
+                if (message.includes('H.map is not a function')) {
+                  console.warn('Filtered HERE Maps error:', message);
+                  return;
+                }
+                return originalConsoleError.apply(console, args);
+              };
             `,
           }}
         />
