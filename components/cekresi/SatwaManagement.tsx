@@ -540,6 +540,9 @@ export function SatwaManagement() {
             <DialogTitle>
               {editingSatwa ? "Edit Satwa" : "Tambah Satwa"}
             </DialogTitle>
+            <DialogDescription>
+              {editingSatwa ? "Edit data satwa yang sudah ada" : "Tambah data satwa baru ke sistem"}
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmitSatwa}>
             <div className="grid gap-4 py-4">
@@ -642,6 +645,9 @@ export function SatwaManagement() {
               <Package className="h-5 w-5" />
               Tracking Progress - {selectedSatwa?.kode_resi}
             </DialogTitle>
+            <DialogDescription>
+              Lihat detail dan kelola progress perjalanan satwa
+            </DialogDescription>
           </DialogHeader>
 
           {selectedSatwa && (
@@ -852,6 +858,9 @@ export function SatwaManagement() {
             <DialogTitle>
               {editingProgress ? "Edit Progress" : "Tambah Progress"}
             </DialogTitle>
+            <DialogDescription>
+              {editingProgress ? "Edit data progress perjalanan" : "Tambah progress perjalanan baru"}
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmitProgress}>
             <div className="grid gap-4 py-4">
@@ -926,6 +935,9 @@ export function SatwaManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Upload Dokumen Pendukung</DialogTitle>
+            <DialogDescription>
+              Upload dokumen pendukung untuk satwa
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmitDokumen}>
             <div className="grid gap-4 py-4">

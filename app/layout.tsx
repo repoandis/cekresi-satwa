@@ -29,6 +29,28 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <Script
+          id="here-maps-polyfill"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Ensure HERE Maps is available globally
+              if (typeof window.H === 'undefined') {
+                window.H = {
+                  map: function() {
+                    console.warn('HERE Maps H.map() called but not loaded - using polyfill');
+                    return null;
+                  },
+                  Client: function() {
+                    console.warn('HERE Maps H.Client() called but not loaded - using polyfill');
+                    return null;
+                  }
+                };
+                console.log('HERE Maps polyfill loaded');
+              }
+            `,
+          }}
+        />
+        <Script
           id="lodash-polyfill"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
