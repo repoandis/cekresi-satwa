@@ -12,9 +12,24 @@ export async function GET(
       [id]
     )
 
+    // Map database status back to Indonesian for display
+    const statusMapping: { [key: string]: string } = {
+      'PENDING': 'Menunggu',
+      'IN_TRANSIT': 'Dalam Perjalanan', 
+      'COMPLETED': 'Selesai',
+      'Menunggu': 'Menunggu',
+      'Dalam Perjalanan': 'Dalam Perjalanan',
+      'Selesai': 'Selesai'
+    }
+
+    const mappedData = result.rows.map(row => ({
+      ...row,
+      status: statusMapping[row.status] || row.status
+    }))
+
     return NextResponse.json({
       success: true,
-      data: result.rows
+      data: mappedData
     })
   } catch (error) {
     console.error('Error fetching progress:', error)
@@ -34,15 +49,27 @@ export async function POST(
     const body = await request.json()
     const { status, lokasi, keterangan } = body
 
+    // Map Indonesian status to English for database consistency
+    const statusMapping: { [key: string]: string } = {
+      'Menunggu': 'PENDING',
+      'Dalam Perjalanan': 'IN_TRANSIT', 
+      'Selesai': 'COMPLETED',
+      'PENDING': 'PENDING',
+      'IN_TRANSIT': 'IN_TRANSIT',
+      'COMPLETED': 'COMPLETED'
+    }
+
+    const dbStatus = statusMapping[status] || status
+
     const result = await db.query(
       'INSERT INTO progress (satwa_id, status, lokasi, keterangan, tanggal) VALUES ($1, $2, $3, $4, NOW()) RETURNING *',
-      [id, status, lokasi, keterangan]
+      [id, status, lokasi, keterangan] // Keep original status for display
     )
 
-    // Update satwa status
+    // Update satwa status with mapped value
     await db.query(
       'UPDATE satwa SET status = $1, updated_at = NOW() WHERE id = $2',
-      [status, id]
+      [dbStatus, id]
     )
 
     return NextResponse.json({

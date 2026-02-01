@@ -1,7 +1,7 @@
 'use client'
 
 import { AppLayout } from '@/components/layout/AppLayout'
-import { SatwaManagement } from '@/components/cekresi/SatwaManagement'
+import SatwaManagement from '@/components/cekresi/SatwaManagement'
 
 export default function SatwaPage() {
   return (

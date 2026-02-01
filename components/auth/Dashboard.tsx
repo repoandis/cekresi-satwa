@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { User, LogOut, Shield, Users, Settings, FileText, Package, Home, Search, BarChart3, Bell, UserCircle, Calendar } from 'lucide-react'
 import { UserManagement } from './UserManagement'
 import { Profile } from './Profile'
-import { SatwaManagement } from '@/components/cekresi/SatwaManagement'
+import SatwaManagement from '@/components/cekresi/SatwaManagement'
 import { ResiSearch } from '@/components/cekresi/ResiSearch'
 
 export function Dashboard() {

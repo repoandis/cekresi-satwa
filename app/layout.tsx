@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Script from "next/script";
 import { ErrorBoundary } from "@/components/debug/ErrorBoundary";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -196,6 +197,7 @@ export default function RootLayout({
             {children}
           </AuthProvider>
         </ErrorBoundary>
+        <Toaster />
       </body>
     </html>
   );

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useToast } from '@/hooks/use-toast'
 import { Package, MapPin, Calendar, FileText, Upload, Download, Trash2, Route, Plus, Edit, Eye } from 'lucide-react'
 
 interface Satwa {
@@ -43,21 +44,20 @@ interface Dokumen {
   uploaded_at: string
 }
 
-export function SatwaManagement() {
+export default function SatwaManagement() {
+  const { toast } = useToast()
   const [satwas, setSatwas] = useState<Satwa[]>([])
-  const [loading, setLoading] = useState(false)
-  const [fetching, setFetching] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // Dialog states
-  const [openSatwa, setOpenSatwa] = useState(false)
-  const [openDetailSatwa, setOpenDetailSatwa] = useState(false)
-  const [openProgressDialog, setOpenProgressDialog] = useState(false)
-  const [openDokumenDialog, setOpenDokumenDialog] = useState(false)
-
-  const [selectedSatwa, setSelectedSatwa] = useState<Satwa | null>(null)
   const [progressList, setProgressList] = useState<Progress[]>([])
   const [dokumenList, setDokumenList] = useState<Dokumen[]>([])
+  const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [openSatwa, setOpenSatwa] = useState(false)
+  const [openProgressDialog, setOpenProgressDialog] = useState(false)
+  const [openDokumenDialog, setOpenDokumenDialog] = useState(false)
+  const [openDetailSatwa, setOpenDetailSatwa] = useState(false)
+
+  const [selectedSatwa, setSelectedSatwa] = useState<Satwa | null>(null)
   const [editingSatwa, setEditingSatwa] = useState<Satwa | null>(null)
   const [editingProgress, setEditingProgress] = useState<Progress | null>(null)
 
@@ -164,13 +164,25 @@ export function SatwaManagement() {
           status: "PENDING",
         })
         await fetchSatwas()
+        toast({
+          title: "Success",
+          description: editingSatwa ? "Satwa updated successfully" : "Satwa created successfully",
+        })
       } else {
         const error = await res.json()
-        alert(error.error || "Error saving satwa")
+        toast({
+          title: "Error",
+          description: error.error || "Error saving satwa",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error saving satwa:", error)
-      alert("Error saving satwa")
+      toast({
+        title: "Error",
+        description: "Error saving satwa",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -184,12 +196,24 @@ export function SatwaManagement() {
       const res = await fetch(`/api/satwas/${id}`, { method: "DELETE" })
       if (res.ok) {
         await fetchSatwas()
+        toast({
+          title: "Success",
+          description: "Satwa deleted successfully",
+        })
       } else {
-        alert("Error deleting satwa")
+        toast({
+          title: "Error",
+          description: "Error deleting satwa",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error deleting satwa:", error)
-      alert("Error deleting satwa")
+      toast({
+        title: "Error",
+        description: "Error deleting satwa",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -218,14 +242,26 @@ export function SatwaManagement() {
       } else {
         try {
           const errorData = JSON.parse(responseText)
-          alert(errorData.error || "Error updating status")
+          toast({
+            title: "Error",
+            description: errorData.error || "Error updating status",
+            variant: "destructive",
+          })
         } catch {
-          alert(`Error updating status: ${responseText}`)
+          toast({
+            title: "Error",
+            description: `Error updating status: ${responseText}`,
+            variant: "destructive",
+          })
         }
       }
     } catch (error) {
       console.error("Error updating status:", error)
-      alert("Error updating status: " + (error instanceof Error ? error.message : "Unknown error"))
+      toast({
+        title: "Error",
+        description: "Error updating status: " + (error instanceof Error ? error.message : "Unknown error"),
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -242,11 +278,15 @@ export function SatwaManagement() {
       ])
 
       if (progressRes.ok && dokumenRes.ok) {
-        const progressData = await progressRes.json()
-        setProgressList(progressData)
+        const progressResponse = await progressRes.json()
+        console.log('Progress API Response:', progressResponse)
+        const progressData = progressResponse.data || progressResponse
+        console.log('Progress Data:', progressData)
+        setProgressList(Array.isArray(progressData) ? progressData : [])
 
-        const dokumenData = await dokumenRes.json()
-        setDokumenList(dokumenData)
+        const dokumenResponse = await dokumenRes.json()
+        const dokumenData = dokumenResponse.data || dokumenResponse
+        setDokumenList(Array.isArray(dokumenData) ? dokumenData : [])
       }
     } catch (error) {
       console.error("Error fetching detail:", error)
@@ -303,8 +343,9 @@ export function SatwaManagement() {
         setOpenProgressDialog(false)
         const progressRes = await fetch(`/api/satwas/${selectedSatwa.id}/progress`)
         if (progressRes.ok) {
-          const progressData = await progressRes.json()
-          setProgressList(progressData)
+          const progressResponse = await progressRes.json()
+          const progressData = progressResponse.data || progressResponse
+          setProgressList(Array.isArray(progressData) ? progressData : [])
         }
         setProgressForm({
           status: "",
@@ -314,11 +355,19 @@ export function SatwaManagement() {
         })
       } else {
         const error = await res.json()
-        alert(error.error || "Error saving progress")
+        toast({
+          title: "Error",
+          description: error.error || "Error saving progress",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error saving progress:", error)
-      alert("Error saving progress")
+      toast({
+        title: "Error",
+        description: "Error saving progress",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -327,7 +376,11 @@ export function SatwaManagement() {
   const handleSubmitDokumen = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedSatwa || !dokumenForm.file) {
-      alert("Pilih file terlebih dahulu")
+      toast({
+        title: "Error",
+        description: "Pilih file terlebih dahulu",
+        variant: "destructive",
+      })
       return
     }
 
@@ -361,18 +414,33 @@ export function SatwaManagement() {
           const dokumenData = await dokumenRes.json()
           setDokumenList(dokumenData)
         }
-        alert('Dokumen berhasil diupload!')
+        toast({
+          title: "Success",
+          description: "Dokumen berhasil diupload!",
+        })
       } else {
         try {
           const errorData = JSON.parse(responseText)
-          alert(errorData.error || "Error uploading dokumen")
+          toast({
+            title: "Error",
+            description: errorData.error || "Error uploading dokumen",
+            variant: "destructive",
+          })
         } catch {
-          alert(`Error uploading dokumen: ${responseText}`)
+          toast({
+            title: "Error",
+            description: `Error uploading dokumen: ${responseText}`,
+            variant: "destructive",
+          })
         }
       }
     } catch (error) {
       console.error("Error uploading dokumen:", error)
-      alert("Error uploading dokumen: " + (error instanceof Error ? error.message : "Unknown error"))
+      toast({
+        title: "Error",
+        description: "Error uploading dokumen: " + (error instanceof Error ? error.message : "Unknown error"),
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -390,15 +458,23 @@ export function SatwaManagement() {
       if (res.ok) {
         const progressRes = await fetch(`/api/satwas/${selectedSatwa.id}/progress`)
         if (progressRes.ok) {
-          const progressData = await progressRes.json()
-          setProgressList(progressData)
+          const progressResponse = await progressRes.json()
+          const progressData = progressResponse.data || progressResponse
+          setProgressList(Array.isArray(progressData) ? progressData : [])
         }
       } else {
-        alert("Error deleting progress")
+        toast({
+          title: "Success",
+          description: "Progress deleted successfully",
+        })
       }
     } catch (error) {
       console.error("Error deleting progress:", error)
-      alert("Error deleting progress")
+      toast({
+        title: "Error",
+        description: "Error deleting progress",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -420,11 +496,18 @@ export function SatwaManagement() {
           setDokumenList(dokumenData)
         }
       } else {
-        alert("Error deleting dokumen")
+        toast({
+          title: "Success",
+          description: "Dokumen deleted successfully",
+        })
       }
     } catch (error) {
       console.error("Error deleting dokumen:", error)
-      alert("Error deleting dokumen")
+      toast({
+        title: "Error",
+        description: "Error deleting dokumen",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -735,7 +818,7 @@ export function SatwaManagement() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  {progressList.length === 0 ? (
+                  {!Array.isArray(progressList) || progressList.length === 0 ? (
                     <div className="py-8 text-center text-muted-foreground">
                       Belum ada progress perjalanan
                     </div>
@@ -803,7 +886,7 @@ export function SatwaManagement() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  {dokumenList.length === 0 ? (
+                  {!Array.isArray(dokumenList) || dokumenList.length === 0 ? (
                     <div className="py-8 text-center text-muted-foreground">
                       Belum ada dokumen
                     </div>
