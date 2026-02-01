@@ -217,7 +217,7 @@ export function ResiSearch({ showAllResiTab = false, onResiDetail, searchKode: p
             </CardHeader>
             <CardContent className="pt-0">
               <form onSubmit={handleSearch} className="space-y-6" id="resi-search-form">
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1">
                     <Label htmlFor="kodeResi" className="text-sm font-medium text-slate-700">Kode Resi</Label>
                     <Input
@@ -234,12 +234,13 @@ export function ResiSearch({ showAllResiTab = false, onResiDetail, searchKode: p
                     <Button 
                       type="submit" 
                       disabled={loading}
-                      className="h-12 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm hover:shadow-md transition-all duration-200"
+                      className="h-12 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm hover:shadow-md transition-all duration-200 w-full sm:w-auto"
                     >
                       {loading ? (
                         <div className="flex items-center space-x-2">
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          <span>Mencari...</span>
+                          <span className="hidden sm:inline">Mencari...</span>
+                          <span className="sm:hidden">Cari...</span>
                         </div>
                       ) : (
                         <div className="flex items-center space-x-2">
@@ -310,7 +311,7 @@ export function ResiSearch({ showAllResiTab = false, onResiDetail, searchKode: p
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-1">
                       <Label className="text-sm font-medium text-slate-700">Nama Satwa</Label>
                       <p className="font-semibold text-slate-900 text-base">{searchResult.nama}</p>
@@ -480,7 +481,8 @@ export function ResiSearch({ showAllResiTab = false, onResiDetail, searchKode: p
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="overflow-x-auto">
+                  {/* Desktop Table View */}
+                  <div className="hidden overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow className="border-b border-slate-200">
@@ -510,6 +512,41 @@ export function ResiSearch({ showAllResiTab = false, onResiDetail, searchKode: p
                         </TableRow>
                       </TableBody>
                     </Table>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="md:hidden">
+                    <Card className="border border-slate-200">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-xs text-slate-500 mb-1">Kode Resi</p>
+                            <p className="font-mono font-medium text-slate-900">{searchResult.kode_resi}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500 mb-1">Nama Satwa</p>
+                            <p className="font-medium text-slate-900">{searchResult.nama}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500 mb-1">Status</p>
+                            {getStatusBadge(searchResult.status)}
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500 mb-1">Progress Terakhir</p>
+                            {progressList.length > 0 ? (
+                              <div>
+                                <div className="font-medium text-slate-900">{progressList[progressList.length - 1].status}</div>
+                                <div className="text-sm text-slate-500">
+                                  {progressList[progressList.length - 1].lokasi}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-slate-500">Belum ada progress</span>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </CardContent>
               </Card>

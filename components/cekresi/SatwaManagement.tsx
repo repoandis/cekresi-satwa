@@ -516,14 +516,15 @@ export default function SatwaManagement() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 pb-4">
           <CardTitle className="flex items-center space-x-2">
             <Package className="h-5 w-5" />
-            <span>Data Satwa</span>
+            <span className="text-lg sm:text-xl">Data Satwa</span>
           </CardTitle>
-          <Button onClick={() => handleOpenSatwaDialog()}>
+          <Button onClick={() => handleOpenSatwaDialog()} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
-            Tambah Satwa
+            <span className="hidden sm:inline">Tambah Satwa</span>
+            <span className="sm:hidden">Tambah</span>
           </Button>
         </CardHeader>
         <CardContent>
@@ -541,96 +542,181 @@ export default function SatwaManagement() {
               Tidak ada data satwa
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Kode Resi</TableHead>
-                  <TableHead>Nama</TableHead>
-                  <TableHead>Spesies</TableHead>
-                  <TableHead>Asal</TableHead>
-                  <TableHead>Tujuan</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Kode Resi</TableHead>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Spesies</TableHead>
+                      <TableHead>Asal</TableHead>
+                      <TableHead>Tujuan</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {satwas.map((satwa) => (
+                      <TableRow key={satwa.id}>
+                        <TableCell className="font-medium">
+                          {satwa.kode_resi}
+                        </TableCell>
+                        <TableCell>{satwa.nama}</TableCell>
+                        <TableCell>{satwa.spesies}</TableCell>
+                        <TableCell>{satwa.asal}</TableCell>
+                        <TableCell>{satwa.tujuan}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              satwa.status === "COMPLETED"
+                                ? "default"
+                                : satwa.status === "IN_TRANSIT"
+                                ? "secondary"
+                                : "outline"
+                            }
+                          >
+                            {satwa.status === "COMPLETED"
+                              ? "Selesai"
+                              : satwa.status === "IN_TRANSIT"
+                              ? "Dalam Perjalanan"
+                              : "Menunggu"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenDetailSatwa(satwa)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenSatwaDialog(satwa)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteSatwa(satwa.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
                 {satwas.map((satwa) => (
-                  <TableRow key={satwa.id}>
-                    <TableCell className="font-medium">
-                      {satwa.kode_resi}
-                    </TableCell>
-                    <TableCell>{satwa.nama}</TableCell>
-                    <TableCell>{satwa.spesies}</TableCell>
-                    <TableCell>{satwa.asal}</TableCell>
-                    <TableCell>{satwa.tujuan}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          satwa.status === "COMPLETED"
-                            ? "default"
+                  <Card key={satwa.id} className="border border-slate-200">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-slate-900 text-lg">{satwa.nama}</h3>
+                          <p className="text-sm text-slate-600 font-mono">{satwa.kode_resi}</p>
+                        </div>
+                        <Badge
+                          variant={
+                            satwa.status === "COMPLETED"
+                              ? "default"
+                              : satwa.status === "IN_TRANSIT"
+                              ? "secondary"
+                              : "outline"
+                          }
+                          className="shrink-0"
+                        >
+                          {satwa.status === "COMPLETED"
+                            ? "Selesai"
                             : satwa.status === "IN_TRANSIT"
-                            ? "secondary"
-                            : "outline"
-                        }
-                      >
-                        {satwa.status === "COMPLETED"
-                          ? "Selesai"
-                          : satwa.status === "IN_TRANSIT"
-                          ? "Dalam Perjalanan"
-                          : "Menunggu"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="default"
-                          onClick={() => handleOpenDetailSatwa(satwa)}
-                          disabled={loading}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleOpenSatwaDialog(satwa)}
-                          disabled={loading}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteSatwa(satwa.id)}
-                          disabled={loading}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                            ? "Dalam Perjalanan"
+                            : "Menunggu"}
+                        </Badge>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                      
+
+                      <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                        <div>
+                          <p className="text-slate-500 text-xs mb-1">Spesies</p>
+                          <p className="font-medium text-slate-900">{satwa.spesies}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-xs mb-1">Asal</p>
+                          <p className="font-medium text-slate-900">{satwa.asal}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-slate-500 text-xs mb-1">Tujuan</p>
+                          <p className="font-medium text-slate-900">{satwa.tujuan}</p>
+                        </div>
+                      </div>
+                      
+
+                      <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+                        <div className="text-xs text-slate-500">
+                          {satwa.created_at && (
+                            <p>Dibuat: {new Date(satwa.created_at).toLocaleDateString('id-ID')}</p>
+                          )}
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenDetailSatwa(satwa)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenSatwaDialog(satwa)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteSatwa(satwa.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
 
       {/* SATWA DIALOG */}
       <Dialog open={openSatwa} onOpenChange={setOpenSatwa}>
-        <DialogContent>
+        <DialogContent className="max-w-md mx-auto max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-lg">
               {editingSatwa ? "Edit Satwa" : "Tambah Satwa"}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm">
               {editingSatwa ? "Edit data satwa yang sudah ada" : "Tambah data satwa baru ke sistem"}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmitSatwa}>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="kodeResi">Kode Resi *</Label>
+                <Label htmlFor="kodeResi" className="text-sm">Kode Resi *</Label>
                 <Input
                   id="kodeResi"
                   value={satwaForm.kodeResi}
@@ -638,10 +724,11 @@ export default function SatwaManagement() {
                     setSatwaForm({ ...satwaForm, kodeResi: e.target.value })
                   }
                   required
+                  className="h-10"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="nama">Nama *</Label>
+                <Label htmlFor="nama" className="text-sm">Nama *</Label>
                 <Input
                   id="nama"
                   value={satwaForm.nama}
@@ -649,10 +736,11 @@ export default function SatwaManagement() {
                     setSatwaForm({ ...satwaForm, nama: e.target.value })
                   }
                   required
+                  className="h-10"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="spesies">Spesies *</Label>
+                <Label htmlFor="spesies" className="text-sm">Spesies *</Label>
                 <Input
                   id="spesies"
                   value={satwaForm.spesies}
@@ -660,10 +748,11 @@ export default function SatwaManagement() {
                     setSatwaForm({ ...satwaForm, spesies: e.target.value })
                   }
                   required
+                  className="h-10"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="asal">Asal *</Label>
+                <Label htmlFor="asal" className="text-sm">Asal *</Label>
                 <Input
                   id="asal"
                   value={satwaForm.asal}
@@ -671,10 +760,11 @@ export default function SatwaManagement() {
                     setSatwaForm({ ...satwaForm, asal: e.target.value })
                   }
                   required
+                  className="h-10"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="tujuan">Tujuan *</Label>
+                <Label htmlFor="tujuan" className="text-sm">Tujuan *</Label>
                 <Input
                   id="tujuan"
                   value={satwaForm.tujuan}
@@ -682,17 +772,18 @@ export default function SatwaManagement() {
                     setSatwaForm({ ...satwaForm, tujuan: e.target.value })
                   }
                   required
+                  className="h-10"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="status">Status *</Label>
+                <Label htmlFor="status" className="text-sm">Status *</Label>
                 <Select
                   value={satwaForm.status}
                   onValueChange={(value: "PENDING" | "IN_TRANSIT" | "COMPLETED") =>
                     setSatwaForm({ ...satwaForm, status: value })
                   }
                 >
-                  <SelectTrigger id="status">
+                  <SelectTrigger id="status" className="h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -703,16 +794,17 @@ export default function SatwaManagement() {
                 </Select>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
               <Button
                 type="button"
                 variant="secondary"
                 onClick={() => setOpenSatwa(false)}
                 disabled={loading}
+                className="w-full sm:w-auto"
               >
                 Batal
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto">
                 {loading ? "Menyimpan..." : "Simpan"}
               </Button>
             </DialogFooter>
