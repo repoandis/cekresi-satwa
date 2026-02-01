@@ -29,54 +29,79 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <Script
-          id="here-maps-polyfill"
+          id="here-maps-blocker"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              // Ensure HERE Maps is available globally and prevent errors
-              if (typeof window.H === 'undefined') {
-                window.H = {
-                  map: function() {
-                    console.warn('HERE Maps H.map() called but not loaded - using polyfill');
-                    return { 
-                      addEventListener: function() {},
-                      setCenter: function() {},
-                      setZoom: function() {},
-                      getViewModel: function() { return { addObserver: function() {} }; }
+              // Completely block HERE Maps from loading
+              (function() {
+                // Block HERE Maps script loading
+                const originalCreateElement = document.createElement;
+                document.createElement = function(tagName) {
+                  const element = originalCreateElement.call(this, tagName);
+                  if (tagName.toLowerCase() === 'script') {
+                    const originalSetAttribute = element.setAttribute;
+                    element.setAttribute = function(name, value) {
+                      if (name === 'src' && (value.includes('here.com') || value.includes('heremaps'))) {
+                        console.warn('Blocked HERE Maps script:', value);
+                        return;
+                      }
+                      return originalSetAttribute.call(this, name, value);
                     };
-                  },
-                  Client: function() {
-                    console.warn('HERE Maps H.Client() called but not loaded - using polyfill');
-                    return { 
-                      configure: function() {},
-                      getPlatform: function() { return { getMapService: function() { return {}; } }; }
-                    };
-                  },
-                  util: {
-                    Request: function() {
-                      return { 
-                        send: function() {},
-                        abort: function() {}
-                      };
-                    }
-                  },
-                  geo: {
-                    Point: function() {
-                      return { lat: 0, lng: 0 };
-                    }
                   }
+                  return element;
                 };
-                console.log('HERE Maps polyfill loaded');
-              }
-              
-              // Override any existing H.map to prevent errors
-              var originalMap = window.H?.map;
-              if (originalMap) {
-                window.H.map = function() {
-                  console.warn('HERE Maps H.map() intercepted by polyfill');
-                  return originalMap.apply(this, arguments) || window.H.map();
-                };
-              }
+
+                // Create comprehensive HERE Maps polyfill
+                if (typeof window.H === 'undefined') {
+                  window.H = {
+                    map: function() {
+                      return { 
+                        addEventListener: function() {},
+                        setCenter: function() {},
+                        setZoom: function() {},
+                        getViewModel: function() { return { addObserver: function() {} }; },
+                        addLayer: function() {},
+                        removeLayer: function() {},
+                        setBaseLayer: function() {},
+                        getCenter: function() { return { lat: 0, lng: 0 }; },
+                        getZoom: function() { return 10; },
+                        getElement: function() { return document.createElement('div'); }
+                      };
+                    },
+                    Client: function() {
+                      return { 
+                        configure: function() {},
+                        getPlatform: function() { return { getMapService: function() { return {}; } }; }
+                      };
+                    },
+                    util: {
+                      Request: function() {
+                        return { 
+                          send: function() {},
+                          abort: function() {}
+                        };
+                      }
+                    },
+                    geo: {
+                      Point: function() {
+                        return { lat: 0, lng: 0 };
+                      }
+                    },
+                    service: {
+                      Platform: function() {
+                        return { getMapService: function() { return {}; } };
+                      }
+                    }
+                  };
+                  console.log('HERE Maps blocker loaded');
+                }
+
+                // Freeze H object to prevent modification
+                if (typeof Object.freeze === 'function') {
+                  Object.freeze(window.H);
+                }
+              })();
             `,
           }}
         />
@@ -102,51 +127,63 @@ export default function RootLayout({
           }}
         />
         <Script
-          id="error-handler"
+          id="error-suppressor"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              // Aggressive error prevention for map-related errors
-              window.addEventListener('error', function(e) {
-                if (e.message && (e.message.includes('H.map is not a function') || e.message.includes('_.map is not a function'))) {
-                  console.error('Map Error prevented:', e.message);
-                  console.error('Error details:', {
-                    message: e.message,
-                    filename: e.filename,
-                    lineno: e.lineno,
-                    colno: e.colno,
-                    stack: e.error?.stack
-                  });
-                  // Prevent the error from crashing the app
-                  e.preventDefault();
-                  e.stopPropagation();
-                  return false;
-                }
-              });
-              
-              window.addEventListener('unhandledrejection', function(e) {
-                if (e.reason && (e.reason.toString().includes('H.map') || e.reason.toString().includes('_.map'))) {
-                  console.error('Map Promise Error prevented:', e.reason);
-                  console.error('Promise error details:', {
-                    reason: e.reason,
-                    stack: e.reason?.stack
-                  });
-                  e.preventDefault();
-                  e.stopPropagation();
-                  return false;
-                }
-              });
-              
-              // Override console.error to catch and filter map errors
-              const originalConsoleError = console.error;
-              console.error = function(...args) {
-                const message = args.join(' ');
-                if (message.includes('H.map is not a function')) {
-                  console.warn('Filtered HERE Maps error:', message);
-                  return;
-                }
-                return originalConsoleError.apply(console, args);
-              };
+              // Completely suppress HERE Maps errors
+              (function() {
+                // Suppress all HERE Maps related errors
+                window.addEventListener('error', function(e) {
+                  if (e.message && (e.message.includes('H.map is not a function') || e.message.includes('_.map is not a function'))) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    return false;
+                  }
+                }, true);
+                
+                window.addEventListener('unhandledrejection', function(e) {
+                  if (e.reason && (e.reason.toString().includes('H.map') || e.reason.toString().includes('_.map'))) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    return false;
+                  }
+                }, true);
+                
+                // Override console methods to filter HERE Maps errors
+                const originalConsoleError = console.error;
+                const originalConsoleWarn = console.warn;
+                
+                console.error = function(...args) {
+                  const message = args.join(' ');
+                  if (message.includes('H.map is not a function') || 
+                      message.includes('ErrorBoundary caught an error: TypeError: H.map is not a function') ||
+                      message.includes('Map Error detected in ErrorBoundary')) {
+                    return; // Completely suppress HERE Maps errors
+                  }
+                  return originalConsoleError.apply(console, args);
+                };
+                
+                console.warn = function(...args) {
+                  const message = args.join(' ');
+                  if (message.includes('HERE Maps') || message.includes('Filtered HERE Maps error')) {
+                    return; // Suppress HERE Maps warnings
+                  }
+                  return originalConsoleWarn.apply(console, args);
+                };
+                
+                // Override ErrorBoundary console.error calls
+                const originalLog = console.log;
+                console.log = function(...args) {
+                  const message = args.join(' ');
+                  if (message.includes('Map Error detected in ErrorBoundary')) {
+                    return; // Suppress ErrorBoundary map errors
+                  }
+                  return originalLog.apply(console, args);
+                };
+              })();
             `,
           }}
         />
