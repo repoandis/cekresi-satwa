@@ -29,21 +29,55 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <Script
+          id="lodash-polyfill"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Ensure Lodash is available globally
+              if (typeof window._ === 'undefined') {
+                window._ = {
+                  map: function(collection, iteratee) {
+                    if (collection == null) return [];
+                    if (Array.isArray(collection)) {
+                      return collection.map(iteratee);
+                    }
+                    return Object.values(collection).map(iteratee);
+                  }
+                };
+                console.log('Lodash polyfill loaded');
+              }
+            `,
+          }}
+        />
+        <Script
           id="error-handler"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               window.addEventListener('error', function(e) {
-                if (e.message && e.message.includes('H.map is not a function')) {
-                  console.error('HERE Maps Error detected:', e);
+                if (e.message && (e.message.includes('H.map is not a function') || e.message.includes('_.map is not a function'))) {
+                  console.error('Map Error detected:', e);
+                  console.error('Error details:', {
+                    message: e.message,
+                    filename: e.filename,
+                    lineno: e.lineno,
+                    colno: e.colno,
+                    stack: e.error?.stack
+                  });
                   // Prevent the error from crashing the app
                   e.preventDefault();
+                  return false;
                 }
               });
               window.addEventListener('unhandledrejection', function(e) {
-                if (e.reason && e.reason.toString().includes('H.map')) {
-                  console.error('HERE Maps Promise Error:', e);
+                if (e.reason && (e.reason.toString().includes('H.map') || e.reason.toString().includes('_.map'))) {
+                  console.error('Map Promise Error:', e);
+                  console.error('Promise error details:', {
+                    reason: e.reason,
+                    stack: e.reason?.stack
+                  });
                   e.preventDefault();
+                  return false;
                 }
               });
             `,

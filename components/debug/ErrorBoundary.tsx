@@ -24,12 +24,13 @@ export class ErrorBoundary extends React.Component<
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
     
-    // Check if it's the HERE Maps error
-    if (error.message && error.message.includes('H.map is not a function')) {
-      console.error('HERE Maps Error detected in ErrorBoundary:', {
+    // Check if it's a map-related error
+    if (error.message && (error.message.includes('H.map is not a function') || error.message.includes('_.map is not a function'))) {
+      console.error('Map Error detected in ErrorBoundary:', {
         error: error.message,
         stack: error.stack,
-        componentStack: errorInfo.componentStack
+        componentStack: errorInfo.componentStack,
+        errorType: error.message.includes('H.map') ? 'HERE Maps' : 'Lodash'
       })
     }
 
